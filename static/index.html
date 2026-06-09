@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trading Agent — Prediction Market Intelligence</title>
+    <meta name="description" content="Multi-agent prediction market analysis platform. Discover top traders on Polymarket and Kalshi with AI-powered crowd wisdom." />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfeff',
+                            100: '#cffafe',
+                            200: '#a5f3fc',
+                            300: '#67e8f9',
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                            700: '#0e7490',
+                            800: '#155e75',
+                            900: '#164e63',
+                            950: '#083344',
+                        },
+                        surface: {
+                            900: '#0a0e17',
+                            800: '#0f1520',
+                            700: '#151d2e',
+                            600: '#1c2640',
+                            500: '#243352',
+                        },
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #0a0e17;
+            color: #e2e8f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background gradient */
+        .bg-mesh {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 20%, rgba(6,182,212,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139,92,246,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 50% 50%, rgba(16,185,129,0.04) 0%, transparent 50%);
+            animation: meshMove 20s ease-in-out infinite alternate;
+        }
+        @keyframes meshMove {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(-20px, 10px) scale(1.05); }
+        }
+
+        /* Glassmorphism cards */
+        .glass {
+            background: rgba(15, 21, 32, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(6, 182, 212, 0.12);
+        }
+        .glass-hover:hover {
+            border-color: rgba(6, 182, 212, 0.3);
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.08);
+        }
+
+        /* Terminal log viewer */
+        .terminal {
+            background: rgba(5, 8, 14, 0.9);
+            border: 1px solid rgba(6, 182, 212, 0.15);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        .terminal::-webkit-scrollbar { width: 6px; }
+        .terminal::-webkit-scrollbar-track { background: transparent; }
+        .terminal::-webkit-scrollbar-thumb { background: rgba(6,182,212,0.3); border-radius: 3px; }
+        .terminal .log-line { padding: 2px 0; opacity: 0; animation: fadeInLine 0.2s ease forwards; }
+        @keyframes fadeInLine { to { opacity: 1; } }
+
+        /* Tab system */
+        .tab-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .tab-btn::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #06b6d4, #8b5cf6);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+            border-radius: 1px;
+        }
+        .tab-btn.active::after { width: 100%; }
+        .tab-btn.active { color: #22d3ee; }
+
+        /* Pipeline action buttons */
+        .action-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(6,182,212,0.15), rgba(139,92,246,0.1));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .action-btn:hover::before { opacity: 1; }
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(6,182,212,0.15);
+        }
+        .action-btn:active { transform: translateY(0); }
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .action-btn:disabled:hover::before { opacity: 0; }
+
+        /* Chat bubbles */
+        .chat-user {
+            background: linear-gradient(135deg, rgba(6,182,212,0.2), rgba(6,182,212,0.1));
+            border: 1px solid rgba(6,182,212,0.2);
+        }
+        .chat-agent {
+            background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(139,92,246,0.05));
+            border: 1px solid rgba(139,92,246,0.2);
+        }
+
+        /* Pulse animation for status */
+        .pulse-dot {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Spinner */
+        .spinner {
+            border: 2px solid rgba(6,182,212,0.2);
+            border-top-color: #06b6d4;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Badge styles */
+        .badge-win { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+        .badge-loss { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .badge-pending { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+
+        /* Table styles */
+        .data-table th {
+            background: rgba(6,182,212,0.08);
+            border-bottom: 1px solid rgba(6,182,212,0.15);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+            color: #67e8f9;
+        }
+        .data-table td {
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .data-table tr:hover td {
+            background: rgba(6,182,212,0.04);
+        }
+
+        /* Smooth tab content transitions */
+        .tab-content {
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Chat input */
+        .chat-input:focus {
+            border-color: rgba(6,182,212,0.5);
+            box-shadow: 0 0 0 3px rgba(6,182,212,0.1);
+        }
+
+        /* Scrollbar for tables */
+        .table-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
+        .table-scroll::-webkit-scrollbar-track { background: transparent; }
+        .table-scroll::-webkit-scrollbar-thumb { background: rgba(6,182,212,0.2); border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+
+    <div class="relative z-10 min-h-screen flex flex-col">
+        <!-- ═══ Header ═══ -->
+        <header class="glass border-b border-brand-800/20 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-400 to-purple-500 flex items-center justify-center text-lg font-bold text-white shadow-lg shadow-brand-500/20">
+                        TA
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold bg-gradient-to-r from-brand-300 to-purple-400 bg-clip-text text-transparent">
+                            Trading Agent
+                        </h1>
+                        <p class="text-xs text-slate-500 font-medium">Polymarket · Kalshi · Multi-Agent Intelligence</p>
+                    </div>
+                </div>
+                <div id="status-indicator" class="flex items-center gap-2 text-xs">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
+                    <span class="text-slate-400">Ready</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ═══ Navigation Tabs ═══ -->
+        <nav class="glass border-b border-brand-800/10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6">
+                <div class="flex gap-1 -mb-px">
+                    <button class="tab-btn active px-5 py-3 text-sm font-medium text-slate-400 hover:text-brand-300 transition-colors" data-tab="dashboard" id="tab-dashboard">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                            Dashboard
+                        </span>
+                    </button>
+                    <button class="tab-btn px-5 py-3 text-sm font-medium text-slate-400 hover:text-brand-300 transition-colors" data-tab="chat" id="tab-chat">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                            Chat
+                        </span>
+                    </button>
+                    <button class="tab-btn px-5 py-3 text-sm font-medium text-slate-400 hover:text-brand-300 transition-colors" data-tab="results" id="tab-results">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            Results
+                            <span id="results-badge" class="hidden ml-1 px-1.5 py-0.5 rounded-full bg-brand-500/20 text-brand-300 text-[10px] font-bold">0</span>
+                        </span>
+                    </button>
+                    <button class="tab-btn px-5 py-3 text-sm font-medium text-slate-400 hover:text-brand-300 transition-colors" data-tab="learning" id="tab-learning">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            Learning Loop
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- ═══ Main Content ═══ -->
+        <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6">
+
+            <!-- ── Dashboard Tab ── -->
+            <section id="panel-dashboard" class="tab-content">
+                <!-- Action Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    <button class="action-btn glass glass-hover rounded-2xl p-5 text-left" data-action="1" id="btn-action-1">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-400/20 to-brand-600/20 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            </div>
+                            <span class="text-xs font-mono text-slate-600">#1</span>
+                        </div>
+                        <h3 class="font-semibold text-sm text-slate-200 mb-1">Full Pipeline</h3>
+                        <p class="text-xs text-slate-500">Run all agents sequentially — discover, classify, research</p>
+                    </button>
+
+                    <button class="action-btn glass glass-hover rounded-2xl p-5 text-left" data-action="2" id="btn-action-2">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400/20 to-emerald-600/20 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+                            <span class="text-xs font-mono text-slate-600">#2</span>
+                        </div>
+                        <h3 class="font-semibold text-sm text-slate-200 mb-1">Polymarket Search</h3>
+                        <p class="text-xs text-slate-500">Scan Polymarket leaderboard for top traders</p>
+                    </button>
+
+                    <button class="action-btn glass glass-hover rounded-2xl p-5 text-left" data-action="3" id="btn-action-3">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-400/20 to-violet-600/20 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+                            <span class="text-xs font-mono text-slate-600">#3</span>
+                        </div>
+                        <h3 class="font-semibold text-sm text-slate-200 mb-1">Kalshi Search</h3>
+                        <p class="text-xs text-slate-500">Discover Kalshi market specialists</p>
+                    </button>
+
+                    <button class="action-btn glass glass-hover rounded-2xl p-5 text-left" data-action="4" id="btn-action-4">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400/20 to-amber-600/20 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                            </div>
+                            <span class="text-xs font-mono text-slate-600">#4</span>
+                        </div>
+                        <h3 class="font-semibold text-sm text-slate-200 mb-1">Niche Mapping</h3>
+                        <p class="text-xs text-slate-500">AI-powered niche classification for loaded traders</p>
+                    </button>
+
+                    <button class="action-btn glass glass-hover rounded-2xl p-5 text-left" data-action="5" id="btn-action-5">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-400/20 to-rose-600/20 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                            </div>
+                            <span class="text-xs font-mono text-slate-600">#5</span>
+                        </div>
+                        <h3 class="font-semibold text-sm text-slate-200 mb-1">RAG Research</h3>
+                        <p class="text-xs text-slate-500">Enrich knowledge base with market research data</p>
+                    </button>
+
+                    <button class="action-btn glass glass-hover rounded-2xl p-5 text-left" data-action="7" id="btn-action-7">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400/20 to-sky-600/20 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            </div>
+                            <span class="text-xs font-mono text-slate-600">#7</span>
+                        </div>
+                        <h3 class="font-semibold text-sm text-slate-200 mb-1">Learning Loop</h3>
+                        <p class="text-xs text-slate-500">View recommendation feedback & trust score history</p>
+                    </button>
+                </div>
+
+                <!-- Live Terminal -->
+                <div class="glass rounded-2xl overflow-hidden">
+                    <div class="flex items-center justify-between px-5 py-3 border-b border-brand-800/20">
+                        <div class="flex items-center gap-3">
+                            <div class="flex gap-1.5">
+                                <span class="w-3 h-3 rounded-full bg-red-500/60"></span>
+                                <span class="w-3 h-3 rounded-full bg-yellow-500/60"></span>
+                                <span class="w-3 h-3 rounded-full bg-green-500/60"></span>
+                            </div>
+                            <span class="text-xs font-mono text-slate-500">agent-output</span>
+                        </div>
+                        <button onclick="clearTerminal()" class="text-xs text-slate-500 hover:text-brand-400 transition-colors font-medium" id="btn-clear-terminal">
+                            Clear
+                        </button>
+                    </div>
+                    <div id="terminal" class="terminal p-4 h-80 overflow-y-auto">
+                        <div class="log-line text-slate-500">Welcome to Trading Agent. Select an action above to begin.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Chat Tab ── -->
+            <section id="panel-chat" class="tab-content hidden">
+                <div class="glass rounded-2xl overflow-hidden flex flex-col" style="height: calc(100vh - 220px);">
+                    <!-- Chat Header -->
+                    <div class="px-5 py-4 border-b border-brand-800/20 flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-brand-500 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-semibold text-slate-200">Trading Agent Intelligence Agent</h2>
+                            <p class="text-xs text-slate-500">Ask about traders, markets, niches, or get copy-trade recommendations</p>
+                        </div>
+                    </div>
+
+                    <!-- Messages Area -->
+                    <div id="chat-messages" class="flex-1 overflow-y-auto p-5 space-y-4 table-scroll">
+                        <div class="chat-agent rounded-2xl rounded-tl-md p-4 max-w-[85%]">
+                            <p class="text-sm text-slate-300">Hello! I'm your Trading Agent analyst. I can help you:</p>
+                            <ul class="text-sm text-slate-400 mt-2 space-y-1 list-disc list-inside">
+                                <li>Analyze trader performance across platforms</li>
+                                <li>Compare niches and win rates</li>
+                                <li>Get copy-trade recommendations</li>
+                                <li>Search market research data</li>
+                            </ul>
+                            <p class="text-sm text-slate-400 mt-2">Run some pipeline actions first to load trader data, then ask me anything!</p>
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="px-5 py-4 border-t border-brand-800/20">
+                        <form id="chat-form" class="flex gap-3">
+                            <input
+                                id="chat-input"
+                                type="text"
+                                placeholder="Ask about traders, markets, or strategies..."
+                                class="chat-input flex-1 bg-surface-700 border border-brand-800/30 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-500 outline-none transition-all"
+                                autocomplete="off"
+                            />
+                            <button
+                                type="submit"
+                                id="chat-send-btn"
+                                class="px-5 py-3 bg-gradient-to-r from-brand-500 to-purple-500 hover:from-brand-400 hover:to-purple-400 text-white text-sm font-semibold rounded-xl transition-all hover:shadow-lg hover:shadow-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Send
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Results Tab ── -->
+            <section id="panel-results" class="tab-content hidden">
+                <div class="glass rounded-2xl overflow-hidden">
+                    <div class="px-5 py-4 border-b border-brand-800/20 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-sm font-semibold text-slate-200">Discovered Traders</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Sorted by ROI. Run pipeline actions to populate data.</p>
+                        </div>
+                        <button onclick="refreshTraders()" class="px-3 py-1.5 text-xs font-medium text-brand-400 hover:text-brand-300 bg-brand-500/10 hover:bg-brand-500/20 rounded-lg transition-all" id="btn-refresh-traders">
+                            ↻ Refresh
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto table-scroll">
+                        <table class="data-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="px-5 py-3 text-left">Platform</th>
+                                    <th class="px-5 py-3 text-left">Name</th>
+                                    <th class="px-5 py-3 text-right">Win Rate</th>
+                                    <th class="px-5 py-3 text-right">ROI</th>
+                                    <th class="px-5 py-3 text-right">Trades</th>
+                                    <th class="px-5 py-3 text-left">Niche</th>
+                                    <th class="px-5 py-3 text-right">Trust</th>
+                                    <th class="px-5 py-3 text-right">Volume</th>
+                                </tr>
+                            </thead>
+                            <tbody id="traders-tbody">
+                                <tr>
+                                    <td colspan="8" class="px-5 py-12 text-center text-slate-500 text-sm">
+                                        No traders loaded yet. Run a pipeline action to discover traders.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Learning Loop Tab ── -->
+            <section id="panel-learning" class="tab-content hidden">
+                <div class="glass rounded-2xl overflow-hidden">
+                    <div class="px-5 py-4 border-b border-brand-800/20 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-sm font-semibold text-slate-200">Recommendation History</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Trust score evolution and outcome tracking</p>
+                        </div>
+                        <button onclick="refreshLearningLoop()" class="px-3 py-1.5 text-xs font-medium text-brand-400 hover:text-brand-300 bg-brand-500/10 hover:bg-brand-500/20 rounded-lg transition-all" id="btn-refresh-learning">
+                            ↻ Refresh
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto table-scroll">
+                        <table class="data-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="px-5 py-3 text-left">ID</th>
+                                    <th class="px-5 py-3 text-left">Trader</th>
+                                    <th class="px-5 py-3 text-left">Platform</th>
+                                    <th class="px-5 py-3 text-left">Recommended</th>
+                                    <th class="px-5 py-3 text-center">Outcome</th>
+                                    <th class="px-5 py-3 text-right">P&L</th>
+                                    <th class="px-5 py-3 text-right">Old Trust</th>
+                                    <th class="px-5 py-3 text-right">New Trust</th>
+                                    <th class="px-5 py-3 text-right">Δ Trust</th>
+                                </tr>
+                            </thead>
+                            <tbody id="learning-tbody">
+                                <tr>
+                                    <td colspan="9" class="px-5 py-12 text-center text-slate-500 text-sm">
+                                        No recommendation history yet. Run the full pipeline or learning loop action.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- ═══ Footer ═══ -->
+        <footer class="text-center py-4 text-xs text-slate-600 border-t border-brand-800/10">
+            Trading Agent &copy; 2025 — Polymarket · Kalshi · Multi-Agent Research System
+        </footer>
+    </div>
+
+    <!-- ═══ JavaScript ═══ -->
+    <script>
+        // ── State ──
+        let isRunning = false;
+        let currentEventSource = null;
+
+        // ── Tab Navigation ──
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabPanels = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+
+                tabButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                tabPanels.forEach(p => p.classList.add('hidden'));
+                const panel = document.getElementById(`panel-${tab}`);
+                panel.classList.remove('hidden');
+                // Re-trigger animation
+                panel.style.animation = 'none';
+                panel.offsetHeight;
+                panel.style.animation = '';
+
+                // Auto-refresh data tabs
+                if (tab === 'results') refreshTraders();
+                if (tab === 'learning') refreshLearningLoop();
+            });
+        });
+
+        // ── Pipeline Actions ──
+        const actionButtons = document.querySelectorAll('.action-btn[data-action]');
+
+        actionButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.dataset.action;
+                runAction(action);
+            });
+        });
+
+        function setRunning(running) {
+            isRunning = running;
+            actionButtons.forEach(btn => btn.disabled = running);
+            const indicator = document.getElementById('status-indicator');
+            if (running) {
+                indicator.innerHTML = `
+                    <span class="spinner"></span>
+                    <span class="text-brand-400 font-medium">Running...</span>
+                `;
+            } else {
+                indicator.innerHTML = `
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
+                    <span class="text-slate-400">Ready</span>
+                `;
+            }
+        }
+
+        function runAction(action) {
+            if (isRunning) return;
+            setRunning(true);
+
+            // Close any existing SSE connection
+            if (currentEventSource) {
+                currentEventSource.close();
+                currentEventSource = null;
+            }
+
+            const terminal = document.getElementById('terminal');
+            appendLog('─'.repeat(60), 'text-slate-600');
+
+            const eventSource = new EventSource(`/api/run/${action}`);
+            currentEventSource = eventSource;
+
+            eventSource.addEventListener('status', (e) => {
+                appendLog(`▸ ${e.data}`, 'text-brand-400 font-medium');
+            });
+
+            eventSource.addEventListener('log', (e) => {
+                appendLog(e.data, 'text-slate-300');
+            });
+
+            eventSource.addEventListener('result', (e) => {
+                try {
+                    const result = JSON.parse(e.data);
+                    const color = result.status === 'success' ? 'text-emerald-400' : 'text-yellow-400';
+                    appendLog(`✓ ${result.message || 'Done'}`, `${color} font-medium`);
+                } catch {
+                    appendLog(`Result: ${e.data}`, 'text-slate-400');
+                }
+            });
+
+            eventSource.addEventListener('done', (e) => {
+                appendLog(`✓ ${e.data} complete`, 'text-emerald-400 font-medium');
+                eventSource.close();
+                currentEventSource = null;
+                setRunning(false);
+            });
+
+            eventSource.onerror = (e) => {
+                appendLog('Connection closed', 'text-slate-500');
+                eventSource.close();
+                currentEventSource = null;
+                setRunning(false);
+            };
+        }
+
+        // ── Terminal ──
+        function appendLog(text, classes = 'text-slate-400') {
+            const terminal = document.getElementById('terminal');
+            const line = document.createElement('div');
+            line.className = `log-line ${classes}`;
+            line.textContent = text;
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function clearTerminal() {
+            const terminal = document.getElementById('terminal');
+            terminal.innerHTML = '<div class="log-line text-slate-500">Terminal cleared.</div>';
+        }
+
+        // ── Chat ──
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Add user message
+            addChatMessage(message, 'user');
+            chatInput.value = '';
+            chatSendBtn.disabled = true;
+            chatSendBtn.textContent = '...';
+
+            // Add thinking indicator
+            const thinkingEl = document.createElement('div');
+            thinkingEl.className = 'chat-agent rounded-2xl rounded-tl-md p-4 max-w-[85%] flex items-center gap-2';
+            thinkingEl.innerHTML = '<span class="spinner"></span><span class="text-sm text-slate-400">Thinking...</span>';
+            thinkingEl.id = 'chat-thinking';
+            chatMessages.appendChild(thinkingEl);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            try {
+                const resp = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message }),
+                });
+                const data = await resp.json();
+
+                // Remove thinking indicator
+                const thinking = document.getElementById('chat-thinking');
+                if (thinking) thinking.remove();
+
+                if (data.reply) {
+                    addChatMessage(data.reply, 'agent');
+                } else if (data.error) {
+                    addChatMessage(`Error: ${data.error}`, 'agent');
+                }
+            } catch (err) {
+                const thinking = document.getElementById('chat-thinking');
+                if (thinking) thinking.remove();
+                addChatMessage(`Connection error: ${err.message}`, 'agent');
+            }
+
+            chatSendBtn.disabled = false;
+            chatSendBtn.textContent = 'Send';
+        });
+
+        function addChatMessage(text, role) {
+            const div = document.createElement('div');
+            const isUser = role === 'user';
+            div.className = `${isUser ? 'chat-user ml-auto' : 'chat-agent'} rounded-2xl ${isUser ? 'rounded-tr-md' : 'rounded-tl-md'} p-4 max-w-[85%]`;
+            div.style.animation = 'fadeIn 0.3s ease';
+
+            const label = document.createElement('div');
+            label.className = `text-[10px] font-semibold uppercase tracking-wider mb-1.5 ${isUser ? 'text-brand-400 text-right' : 'text-purple-400'}`;
+            label.textContent = isUser ? 'You' : 'Trading Agent Agent';
+
+            const content = document.createElement('div');
+            content.className = 'text-sm text-slate-300 whitespace-pre-wrap leading-relaxed';
+            content.textContent = text;
+
+            div.appendChild(label);
+            div.appendChild(content);
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // ── Results Table ──
+        async function refreshTraders() {
+            try {
+                const resp = await fetch('/api/traders');
+                const traders = await resp.json();
+                renderTraders(traders);
+            } catch (err) {
+                console.error('Failed to fetch traders:', err);
+            }
+        }
+
+        function renderTraders(traders) {
+            const tbody = document.getElementById('traders-tbody');
+            const badge = document.getElementById('results-badge');
+
+            if (!traders || traders.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="px-5 py-12 text-center text-slate-500 text-sm">
+                            No traders loaded yet. Run a pipeline action to discover traders.
+                        </td>
+                    </tr>`;
+                badge.classList.add('hidden');
+                return;
+            }
+
+            badge.textContent = traders.length;
+            badge.classList.remove('hidden');
+
+            tbody.innerHTML = traders.map((t, i) => {
+                const wrColor = t.win_rate >= 0.6 ? 'text-emerald-400' : t.win_rate >= 0.5 ? 'text-yellow-400' : 'text-red-400';
+                const roiColor = t.roi >= 0 ? 'text-emerald-400' : 'text-red-400';
+                const roiSign = t.roi >= 0 ? '+' : '';
+                const trustColor = t.trust_score >= 0.6 ? 'text-emerald-400' : t.trust_score >= 0.4 ? 'text-yellow-400' : 'text-red-400';
+
+                return `
+                    <tr class="transition-colors">
+                        <td class="px-5 py-3">
+                            <span class="px-2 py-0.5 rounded-md text-xs font-medium ${t.platform === 'polymarket' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-violet-500/10 text-violet-400'}">
+                                ${t.platform}
+                            </span>
+                        </td>
+                        <td class="px-5 py-3 font-medium text-slate-200">${escapeHtml(t.display_name || t.identifier.slice(0, 14))}</td>
+                        <td class="px-5 py-3 text-right font-mono ${wrColor}">${(t.win_rate * 100).toFixed(1)}%</td>
+                        <td class="px-5 py-3 text-right font-mono ${roiColor}">${roiSign}${(t.roi * 100).toFixed(1)}%</td>
+                        <td class="px-5 py-3 text-right font-mono text-slate-400">${t.total_trades}</td>
+                        <td class="px-5 py-3">
+                            <span class="px-2 py-0.5 rounded-md text-xs bg-brand-500/10 text-brand-300">${t.primary_niche || '—'}</span>
+                        </td>
+                        <td class="px-5 py-3 text-right font-mono ${trustColor}">${t.trust_score.toFixed(2)}</td>
+                        <td class="px-5 py-3 text-right font-mono text-slate-400">$${formatNumber(t.total_volume_usd)}</td>
+                    </tr>`;
+            }).join('');
+        }
+
+        // ── Learning Loop Table ──
+        async function refreshLearningLoop() {
+            try {
+                const resp = await fetch('/api/learning-loop');
+                const history = await resp.json();
+                renderLearningLoop(history);
+            } catch (err) {
+                console.error('Failed to fetch learning loop:', err);
+            }
+        }
+
+        function renderLearningLoop(history) {
+            const tbody = document.getElementById('learning-tbody');
+
+            if (!history || history.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="px-5 py-12 text-center text-slate-500 text-sm">
+                            No recommendation history yet. Run the full pipeline or learning loop action.
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            tbody.innerHTML = history.map(rec => {
+                const outcomeClass = {
+                    win: 'badge-win',
+                    loss: 'badge-loss',
+                    pending: 'badge-pending',
+                }[rec.outcome] || 'badge-pending';
+
+                const delta = (rec.new_trust - rec.old_trust);
+                const deltaColor = delta >= 0 ? 'text-emerald-400' : 'text-red-400';
+                const deltaSign = delta >= 0 ? '+' : '';
+                const pnlColor = rec.profit_loss >= 0 ? 'text-emerald-400' : 'text-red-400';
+                const pnlSign = rec.profit_loss >= 0 ? '+' : '';
+
+                return `
+                    <tr class="transition-colors">
+                        <td class="px-5 py-3 font-mono text-slate-500 text-xs">${rec.id}</td>
+                        <td class="px-5 py-3 font-mono text-slate-300 text-xs">${rec.trader_id.slice(0, 14)}…</td>
+                        <td class="px-5 py-3">
+                            <span class="px-2 py-0.5 rounded-md text-xs font-medium ${rec.platform === 'polymarket' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-violet-500/10 text-violet-400'}">
+                                ${rec.platform}
+                            </span>
+                        </td>
+                        <td class="px-5 py-3 text-xs text-slate-400">${rec.recommended_at ? rec.recommended_at.slice(0, 19) : '—'}</td>
+                        <td class="px-5 py-3 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${outcomeClass}">${rec.outcome}</span>
+                        </td>
+                        <td class="px-5 py-3 text-right font-mono text-xs ${pnlColor}">${pnlSign}$${Math.abs(rec.profit_loss).toFixed(2)}</td>
+                        <td class="px-5 py-3 text-right font-mono text-xs text-slate-400">${rec.old_trust.toFixed(3)}</td>
+                        <td class="px-5 py-3 text-right font-mono text-xs text-slate-400">${rec.new_trust.toFixed(3)}</td>
+                        <td class="px-5 py-3 text-right font-mono text-xs ${deltaColor}">${deltaSign}${delta.toFixed(3)}</td>
+                    </tr>`;
+            }).join('');
+        }
+
+        // ── Utilities ──
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function formatNumber(num) {
+            if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M';
+            if (num >= 1_000) return (num / 1_000).toFixed(1) + 'K';
+            return num.toFixed(0);
+        }
+
+        // ── Keyboard shortcuts ──
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+K focuses chat input
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.querySelector('[data-tab="chat"]').click();
+                setTimeout(() => chatInput.focus(), 100);
+            }
+        });
+    </script>
+</body>
+</html>
