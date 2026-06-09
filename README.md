@@ -2,6 +2,8 @@
 
 > A multi-agent AI system that discovers consistent profitable traders on prediction markets, classifies them by niche, enriches a RAG knowledge base with live market research, and lets you chat with the data to make informed follow-trading decisions. Now upgraded to a **modern FastAPI + React-style single-page Web Application** deployable to Railway.
 
+🚀 **Live Demo:** [https://trading-agent-prod.up.railway.app/](https://trading-agent-prod.up.railway.app/)
+
 ---
 
 ## What It Does
