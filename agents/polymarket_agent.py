@@ -16,12 +16,15 @@ class PolymarketAgent:
         self.activity_days = config.ACTIVITY_DAYS
         self.top_n = config.TOP_TRADERS_LIMIT
 
-    def run(self) -> list[Trader]:
-        logger.info("PolymarketAgent starting trader discovery")
+    def run(self, mode: str = 'all-time') -> list[Trader]:
+        logger.info(f"PolymarketAgent starting trader discovery in '{mode}' mode")
         console.print("[bold cyan]🔍 Polymarket Agent[/bold cyan] — scanning leaderboard...")
 
         try:
-            raw_entries = polymarket_tools.fetch_leaderboard(limit=200)
+            if mode == 'trending':
+                raw_entries = polymarket_tools.fetch_trending_traders(limit=200)
+            else:
+                raw_entries = polymarket_tools.fetch_leaderboard(limit=200)
         except Exception as exc:
             logger.warning(f"Polymarket API unavailable ({exc}) — using fallback profiles")
             console.print("[yellow]⚠ Polymarket API unavailable — using representative profiles[/yellow]")

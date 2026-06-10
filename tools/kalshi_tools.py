@@ -138,7 +138,8 @@ def build_trader_from_stats(member_id: str, stats: dict[str, Any]) -> Trader:
 
     return Trader(
         platform="kalshi",
-        identifier=member_id,
+        identifier=member_id[:12],
+        display_name=f"Kalshi:{member_id[:12]}",
         win_rate=win_rate,
         roi=roi,
         total_trades=total,
@@ -146,3 +147,31 @@ def build_trader_from_stats(member_id: str, stats: dict[str, Any]) -> Trader:
         profit_loss_usd=pnl,
         last_active=datetime.now(timezone.utc),
     )
+
+def fetch_trending_traders(limit: int = 15) -> list[Trader]:
+    # 1. Fetch recent active markets
+    markets = fetch_markets(limit=20)
+    all_trades = []
+    
+    # 2. Fetch history for each market to gather recent trades
+    for m in markets[:10]:
+        try:
+            trades = fetch_market_history(m.market_id, limit=200)
+            all_trades.extend(trades)
+        except Exception:
+            pass
+
+    # 3. Aggregate user performance across all recent trades
+    stats = aggregate_traders_from_trades(all_trades)
+    
+    traders = []
+    for member_id, user_stats in stats.items():
+        if user_stats["volume"] < 10: # Filter out dust
+            continue
+        traders.append(build_trader_from_stats(member_id, user_stats))
+        
+    # 4. Sort by volume to find the daily trending traders
+    traders.sort(key=lambda t: t.total_volume_usd, reverse=True)
+    
+    logger.info(f"Synthesised {len(traders)} REAL trending Kalshi traders from recent history")
+    return traders[:limit]

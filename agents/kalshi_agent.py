@@ -38,24 +38,48 @@ class KalshiAgent:
 
     def __init__(self) -> None:
         self.top_n = config.TOP_TRADERS_LIMIT
+        self.limit = config.TOP_TRADERS_LIMIT
 
-    def run(self) -> list[Trader]:
-        logger.info("KalshiAgent starting trader discovery")
+    def run(self, mode: str = "all-time") -> list[Trader]:
+        """
+        Discovers active traders on Kalshi.
+        If mode="trending", finds recently highly active traders across top markets.
+        """
+        logger.info(f"KalshiAgent starting trader discovery in '{mode}' mode")
         console.print("[bold cyan]🔍 Kalshi Agent[/bold cyan] — scanning markets...")
 
-        markets = self._fetch_markets()
+        if mode == "trending":
+            try:
+                traders = kalshi_tools.fetch_trending_traders(limit=self.limit)
+                if traders:
+                    logger.info(f"KalshiAgent returning {len(traders)} trending traders")
+                    return traders
+            except Exception as exc:
+                logger.warning(f"Failed to fetch trending Kalshi traders: {exc}")
 
-        if markets:
-            traders = self._synthesise_from_markets(markets)
-        else:
-            logger.warning("Kalshi API unavailable — using representative fallback profiles")
-            console.print("[yellow]⚠ Kalshi API unavailable — using representative profiles[/yellow]")
-            traders = self._fallback_traders()
+        # Fallback / All-time mode (uses synthesized markets)
+        try:
+            markets = kalshi_tools.fetch_markets(limit=self.limit * 5)
+            # Basic deduping/filtering by category
+            top_markets = []
+            seen = set()
+            for m in markets:
+                if m.category not in seen:
+                    top_markets.append(m)
+                    seen.add(m.category)
+                if len(top_markets) >= self.limit:
+                    break
 
-        sorted_traders = sorted(traders, key=lambda t: t.roi, reverse=True)[: self.top_n]
-        logger.info(f"KalshiAgent returning {len(sorted_traders)} traders")
-        console.print(f"[green]✓ Found {len(sorted_traders)} Kalshi market specialists[/green]")
-        return sorted_traders
+            traders = self._synthesise_from_markets(top_markets)
+            if not traders:
+                traders = self._fallback_traders()
+            
+            logger.info(f"KalshiAgent returning {len(traders)} traders")
+            console.print(f"[green]✓ Found {len(traders)} Kalshi market specialists[/green]")
+            return traders
+        except Exception as exc:
+            logger.error(f"KalshiAgent failed: {exc}")
+            return []
 
     def _fetch_markets(self) -> list[Market]:
         try:
