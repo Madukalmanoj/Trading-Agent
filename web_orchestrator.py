@@ -76,6 +76,28 @@ class WebOrchestrator:
             "traders": len(self.traders),
         }
 
+    def run_weekly_pipeline(self) -> dict:
+        """Option 9: Run weekly pipeline (Weekly Consistent Traders)."""
+        logger.info("Starting weekly pipeline (Weekly Top Traders)")
+        
+        poly_traders = self.poly_agent.run(mode="weekly")
+        kalshi_traders = self.kalshi_agent.run(mode="weekly")
+        self.traders = poly_traders + kalshi_traders
+        logger.info(f"Total weekly traders discovered: {len(self.traders)}")
+
+        if not self.traders:
+            return {"status": "warning", "message": "No weekly traders found.", "traders": 0}
+
+        self.traders = self.niche_agent.run(self.traders)
+        self.research_agent.run(markets=[])
+        self.learning_loop.update_all_pending(self.traders)
+
+        return {
+            "status": "success",
+            "message": f"Weekly pipeline complete. {len(self.traders)} traders discovered.",
+            "traders": len(self.traders),
+        }
+
     def run_polymarket_only(self) -> dict:
         """Option 2: Search Polymarket traders only."""
         poly_traders = self.poly_agent.run()

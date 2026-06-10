@@ -65,22 +65,14 @@ async def index():
 
 ACTION_MAP = {
     "1": "run_full_pipeline",
-    "2": "run_polymarket_only",
-    "3": "run_kalshi_only",
-    "4": "run_niche_mapping",
-    "5": "run_research",
-    "7": "view_learning_loop",
     "8": "run_trending_pipeline",
+    "9": "run_weekly_pipeline",
 }
 
 ACTION_LABELS = {
-    "1": "Full Pipeline",
-    "2": "Polymarket Search",
-    "3": "Kalshi Search",
-    "4": "Niche Mapping",
-    "5": "RAG Research",
-    "7": "Learning Loop",
-    "8": "Trending Pipeline",
+    "1": "Top Traders (All-Time)",
+    "8": "Trending Traders (Daily)",
+    "9": "Consistent Traders (Weekly)",
 }
 
 

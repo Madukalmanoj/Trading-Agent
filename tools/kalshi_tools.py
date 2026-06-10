@@ -111,11 +111,14 @@ def aggregate_traders_from_trades(trades: list[dict[str, Any]]) -> dict[str, dic
             continue
 
         if member not in stats:
-            stats[member] = {"wins": 0, "losses": 0, "volume": 0.0, "pnl": 0.0}
+            stats[member] = {"wins": 0, "losses": 0, "volume": 0.0, "pnl": 0.0, "markets": set()}
 
         count = int(trade.get("count", 1))
         price = float(trade.get("yes_price", 50)) / 100
         side = trade.get("taker_side", "yes")
+        market_id = trade.get("market_id")
+        if market_id:
+            stats[member]["markets"].add(market_id)
 
         stats[member]["volume"] += count * price
         if side == "yes" and price < 0.5:
@@ -146,17 +149,22 @@ def build_trader_from_stats(member_id: str, stats: dict[str, Any]) -> Trader:
         total_volume_usd=volume,
         profit_loss_usd=pnl,
         last_active=datetime.now(timezone.utc),
+        active_markets=list(stats.get("markets", [])),
     )
 
-def fetch_trending_traders(limit: int = 15) -> list[Trader]:
+def fetch_trending_traders(limit: int = 15, timeframe: str = "daily") -> list[Trader]:
     # 1. Fetch recent active markets
-    markets = fetch_markets(limit=20)
+    markets_limit = 50 if timeframe == "weekly" else 20
+    trades_limit = 500 if timeframe == "weekly" else 200
+    markets = fetch_markets(limit=markets_limit)
     all_trades = []
     
     # 2. Fetch history for each market to gather recent trades
-    for m in markets[:10]:
+    for m in markets[:(30 if timeframe=="weekly" else 10)]:
         try:
-            trades = fetch_market_history(m.market_id, limit=200)
+            trades = fetch_market_history(m.market_id, limit=trades_limit)
+            for t in trades:
+                t["market_id"] = m.market_id  # Inject market ID for linking
             all_trades.extend(trades)
         except Exception:
             pass

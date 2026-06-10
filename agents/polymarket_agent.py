@@ -21,8 +21,9 @@ class PolymarketAgent:
         console.print("[bold cyan]🔍 Polymarket Agent[/bold cyan] — scanning leaderboard...")
 
         try:
-            if mode == 'trending':
-                raw_entries = polymarket_tools.fetch_trending_traders(limit=200)
+            if mode in ['trending', 'weekly']:
+                timeframe = "weekly" if mode == "weekly" else "daily"
+                raw_entries = polymarket_tools.fetch_trending_traders(limit=200, timeframe=timeframe)
             else:
                 raw_entries = polymarket_tools.fetch_leaderboard(limit=200)
         except Exception as exc:

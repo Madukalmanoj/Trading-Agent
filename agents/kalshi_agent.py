@@ -48,14 +48,15 @@ class KalshiAgent:
         logger.info(f"KalshiAgent starting trader discovery in '{mode}' mode")
         console.print("[bold cyan]🔍 Kalshi Agent[/bold cyan] — scanning markets...")
 
-        if mode == "trending":
+        if mode in ["trending", "weekly"]:
             try:
-                traders = kalshi_tools.fetch_trending_traders(limit=self.limit)
+                timeframe = "weekly" if mode == "weekly" else "daily"
+                traders = kalshi_tools.fetch_trending_traders(limit=self.limit, timeframe=timeframe)
                 if traders:
-                    logger.info(f"KalshiAgent returning {len(traders)} trending traders")
+                    logger.info(f"KalshiAgent returning {len(traders)} {timeframe} traders")
                     return traders
             except Exception as exc:
-                logger.warning(f"Failed to fetch trending Kalshi traders: {exc}")
+                logger.warning(f"Failed to fetch {mode} Kalshi traders: {exc}")
 
         # Fallback / All-time mode (uses synthesized markets)
         try:

@@ -74,10 +74,11 @@ def fetch_leaderboard(limit: int = 200) -> list[dict[str, Any]]:
     return enriched
 
 @_retry()
-def fetch_trending_traders(limit: int = 20) -> list[dict[str, Any]]:
+def fetch_trending_traders(limit: int = 20, timeframe: str = "daily") -> list[dict[str, Any]]:
     # Fetch recent bets to find who is trading heavily *right now*
+    bets_limit = 5000 if timeframe == "weekly" else 1000
     with _client() as client:
-        resp = client.get(f"{MANIFOLD_BASE}/bets", params={"limit": 1000})
+        resp = client.get(f"{MANIFOLD_BASE}/bets", params={"limit": bets_limit})
         resp.raise_for_status()
         bets = resp.json()
 

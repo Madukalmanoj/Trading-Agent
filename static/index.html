@@ -282,82 +282,50 @@
             <!-- ── Dashboard Tab ── -->
             <section id="panel-dashboard" class="tab-content">
                 <!-- Action Cards Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                    <button class="action-btn glass glass-hover rounded-2xl p-5 text-left" data-action="1" id="btn-action-1">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-400/20 to-brand-600/20 flex items-center justify-center">
-                                <svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            </div>
-                            <span class="text-xs font-mono text-slate-600">#1</span>
+                <!-- Action Cards Grid -->
+                <div class="mb-8 p-6 glass rounded-2xl bg-brand-500/5 border border-brand-500/20">
+                    <h3 class="text-lg font-bold text-brand-300 mb-4 flex items-center gap-2">
+                        <i class="fas fa-rocket"></i> Quick Start Guide
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-slate-300">
+                        <div class="flex flex-col gap-2">
+                            <div class="w-8 h-8 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold">1</div>
+                            <p><strong>Discover:</strong> Click one of the massive buttons below to search the markets and let the AI agents classify traders.</p>
                         </div>
-                        <h3 class="font-semibold text-sm text-slate-200 mb-1">Full Pipeline</h3>
-                        <p class="text-xs text-slate-500">Run all agents sequentially — discover, classify, research</p>
+                        <div class="flex flex-col gap-2">
+                            <div class="w-8 h-8 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold">2</div>
+                            <p><strong>Review:</strong> Check the "Results" tab to see trader stats, win rates, and click their name to view live trades.</p>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <div class="w-8 h-8 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold">3</div>
+                            <p><strong>Chat:</strong> Use the "Chat" tab to ask the AI for specific recommendations or insights about the discovered traders.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <button class="action-btn glass glass-hover rounded-2xl p-6 text-left border-t-4 border-t-emerald-500 flex flex-col gap-3" data-action="1" id="btn-action-1">
+                        <div class="text-3xl">🌟</div>
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-100">Top Traders (All-Time)</h3>
+                            <p class="text-sm text-slate-400 mt-1">Discover the most profitable legends in prediction market history.</p>
+                        </div>
                     </button>
 
-                    <button class="action-btn glass glass-hover rounded-2xl p-5 text-left" data-action="2" id="btn-action-2">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400/20 to-emerald-600/20 flex items-center justify-center">
-                                <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            </div>
-                            <span class="text-xs font-mono text-slate-600">#2</span>
+                    <button class="action-btn glass glass-hover rounded-2xl p-6 text-left border-t-4 border-t-orange-500 flex flex-col gap-3" data-action="8" id="btn-action-8">
+                        <div class="text-3xl">🔥</div>
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-100">Trending (Daily)</h3>
+                            <p class="text-sm text-slate-400 mt-1">Find hot traders pushing the most volume right now.</p>
                         </div>
-                        <h3 class="font-semibold text-sm text-slate-200 mb-1">Polymarket Search</h3>
-                        <p class="text-xs text-slate-500">Scan Polymarket leaderboard for top traders</p>
                     </button>
 
-                    <button class="action-btn glass glass-hover rounded-2xl p-5 text-left" data-action="3" id="btn-action-3">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-400/20 to-violet-600/20 flex items-center justify-center">
-                                <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            </div>
-                            <span class="text-xs font-mono text-slate-600">#3</span>
+                    <button class="action-btn glass glass-hover rounded-2xl p-6 text-left border-t-4 border-t-purple-500 flex flex-col gap-3" data-action="9" id="btn-action-9">
+                        <div class="text-3xl">📈</div>
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-100">Consistent (Weekly)</h3>
+                            <p class="text-sm text-slate-400 mt-1">Discover active traders dominating the markets this week.</p>
                         </div>
-                        <h3 class="font-semibold text-sm text-slate-200 mb-1">Kalshi Search</h3>
-                        <p class="text-xs text-slate-500">Discover Kalshi market specialists</p>
-                    </button>
-
-                    <button class="action-btn glass glass-hover rounded-2xl p-5 text-left" data-action="4" id="btn-action-4">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400/20 to-amber-600/20 flex items-center justify-center">
-                                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
-                            </div>
-                            <span class="text-xs font-mono text-slate-600">#4</span>
-                        </div>
-                        <h3 class="font-semibold text-sm text-slate-200 mb-1">Niche Mapping</h3>
-                        <p class="text-xs text-slate-500">AI-powered niche classification for loaded traders</p>
-                    </button>
-
-                    <button class="action-btn glass glass-hover rounded-2xl p-5 text-left" data-action="5" id="btn-action-5">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-400/20 to-rose-600/20 flex items-center justify-center">
-                                <svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                            </div>
-                            <span class="text-xs font-mono text-slate-600">#5</span>
-                        </div>
-                        <h3 class="font-semibold text-sm text-slate-200 mb-1">RAG Research</h3>
-                        <p class="text-xs text-slate-500">Enrich knowledge base with market research data</p>
-                    </button>
-
-                    <button class="action-btn glass glass-hover rounded-2xl p-5 text-left" data-action="7" id="btn-action-7">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400/20 to-sky-600/20 flex items-center justify-center">
-                                <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                            </div>
-                            <span class="text-xs font-mono text-slate-600">#7</span>
-                        </div>
-                        <h3 class="font-semibold text-sm text-slate-200 mb-1">Learning Loop</h3>
-                        <p class="text-xs text-slate-500">View recommendation feedback & trust score history</p>
-                    </button>
-
-                    <button class="action-btn glass glass-hover rounded-2xl p-5 text-left" data-action="8" id="btn-action-8">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400/20 to-orange-600/20 flex items-center justify-center">
-                                <span class="text-xl">🔥</span>
-                            </div>
-                            <span class="text-xs font-mono text-slate-600">#8</span>
-                        </div>
-                        <h3 class="font-semibold text-sm text-slate-200 mb-1">Trending Pipeline</h3>
-                        <p class="text-xs text-slate-500">Discover Daily Top active traders dynamically</p>
                     </button>
                 </div>
 
@@ -753,6 +721,8 @@
                         const parts = t.identifier.split(':');
                         const ticker = parts[parts.length - 1];
                         profileUrl = `https://kalshi.com/markets/${encodeURIComponent(ticker)}`;
+                    } else if (t.active_markets && t.active_markets.length > 0) {
+                        profileUrl = `https://kalshi.com/markets/${encodeURIComponent(t.active_markets[0])}`;
                     } else {
                         profileUrl = 'https://kalshi.com/';
                     }
