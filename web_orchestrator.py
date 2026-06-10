@@ -53,6 +53,29 @@ class WebOrchestrator:
             "traders": len(self.traders),
         }
 
+    def run_trending_pipeline(self) -> dict:
+        """Option 8: Run trending pipeline (Daily Top Traders)."""
+        logger.info("Starting trending pipeline (Daily Top Traders)")
+        
+        # We don't have console here since it's a web orchestrator, so just use logger
+        poly_traders = self.poly_agent.run(mode="trending")
+        kalshi_traders = self.kalshi_agent.run(mode="trending")
+        self.traders = poly_traders + kalshi_traders
+        logger.info(f"Total trending traders discovered: {len(self.traders)}")
+
+        if not self.traders:
+            return {"status": "warning", "message": "No trending traders found.", "traders": 0}
+
+        self.traders = self.niche_agent.run(self.traders)
+        self.research_agent.run(markets=[])
+        self.learning_loop.update_all_pending(self.traders)
+
+        return {
+            "status": "success",
+            "message": f"Trending pipeline complete. {len(self.traders)} traders discovered.",
+            "traders": len(self.traders),
+        }
+
     def run_polymarket_only(self) -> dict:
         """Option 2: Search Polymarket traders only."""
         poly_traders = self.poly_agent.run()

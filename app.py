@@ -70,6 +70,7 @@ ACTION_MAP = {
     "4": "run_niche_mapping",
     "5": "run_research",
     "7": "view_learning_loop",
+    "8": "run_trending_pipeline",
 }
 
 ACTION_LABELS = {
@@ -79,6 +80,7 @@ ACTION_LABELS = {
     "4": "Niche Mapping",
     "5": "RAG Research",
     "7": "Learning Loop",
+    "8": "Trending Pipeline",
 }
 
 
