@@ -6,6 +6,7 @@
     <title>Trading Agent — Prediction Market Intelligence</title>
     <meta name="description" content="Multi-agent prediction market analysis platform. Discover top traders on Polymarket and Kalshi with AI-powered crowd wisdom." />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -670,7 +671,17 @@
 
             const content = document.createElement('div');
             content.className = 'text-sm text-slate-300 whitespace-pre-wrap leading-relaxed';
-            content.textContent = text;
+            
+            if (isUser) {
+                content.textContent = text;
+            } else {
+                // Configure marked to open links in a new tab
+                const renderer = new marked.Renderer();
+                renderer.link = function(href, title, text) {
+                    return `<a target="_blank" rel="noopener noreferrer" href="${href}" class="text-brand-300 hover:text-brand-200 underline">${text}</a>`;
+                };
+                content.innerHTML = marked.parse(text, { renderer: renderer });
+            }
 
             div.appendChild(label);
             div.appendChild(content);
