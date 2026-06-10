@@ -45,6 +45,12 @@ class WebOrchestrator:
 
         self.traders = self.niche_agent.run(self.traders)
         self.research_agent.run(markets=[])
+        
+        # Automatically recommend top trader to populate learning loop UI
+        if self.traders:
+            best = max(self.traders, key=lambda t: (t.trust_score * 0.3 + t.roi * 0.4 + t.win_rate * 0.3))
+            self.learning_loop.log_recommendation(best)
+            
         self.learning_loop.update_all_pending(self.traders)
 
         return {
@@ -68,6 +74,11 @@ class WebOrchestrator:
 
         self.traders = self.niche_agent.run(self.traders)
         self.research_agent.run(markets=[])
+        
+        if self.traders:
+            best = max(self.traders, key=lambda t: (t.trust_score * 0.3 + t.roi * 0.4 + t.win_rate * 0.3))
+            self.learning_loop.log_recommendation(best)
+            
         self.learning_loop.update_all_pending(self.traders)
 
         return {
@@ -90,6 +101,11 @@ class WebOrchestrator:
 
         self.traders = self.niche_agent.run(self.traders)
         self.research_agent.run(markets=[])
+        
+        if self.traders:
+            best = max(self.traders, key=lambda t: (t.trust_score * 0.3 + t.roi * 0.4 + t.win_rate * 0.3))
+            self.learning_loop.log_recommendation(best)
+            
         self.learning_loop.update_all_pending(self.traders)
 
         return {

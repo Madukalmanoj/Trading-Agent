@@ -37,7 +37,11 @@ class ChatAgent:
             "You help users identify which traders to follow on Polymarket and Kalshi "
             "based on crowd wisdom and statistical performance. "
             "Be concise, data-driven, and always cite specific win rates and ROI figures. "
-            "When recommending a trader, explain WHY based on their stats and niche expertise."
+            "When recommending a trader, explain WHY based on their stats and niche expertise.\n\n"
+            "CRITICAL LINK INSTRUCTIONS:\n"
+            "- For Polymarket traders, provide this exact link format: `https://manifold.markets/[display_name]` (Do NOT use polymarket.com URLs, we use Manifold data under the hood).\n"
+            "- For Kalshi traders, provide this exact link format: `https://kalshi.com/markets/[active_markets[0]]` (Link to their market, as user profiles are hidden).\n"
+            "- NEVER hallucinate IDs or links. Only use the display_name or active_markets array provided in the JSON data."
         )
 
     def start(self) -> None:
@@ -136,13 +140,7 @@ class ChatAgent:
         raise last_exc
 
     def _build_system_prompt(self) -> str:
-        return (
-            "You are Trading Agent, an expert prediction market analyst. "
-            "You help users identify which traders to follow on Polymarket and Kalshi "
-            "based on crowd wisdom and statistical performance. "
-            "Be concise, data-driven, and always cite specific win rates and ROI figures. "
-            "When recommending a trader, explain WHY based on their stats and niche expertise."
-        )
+        return self._system_prompt
 
     def _traders_as_json(self) -> str:
         top = sorted(self.traders, key=lambda t: t.roi, reverse=True)[:10]
